@@ -44,7 +44,7 @@ def schematic_to_3d_array(schematic, filters=None):
             block_adjusted = convert_funky_coordinates(block, [region.width, region.height, region.length])
             cor_x, cor_y, cor_z = block_adjusted[0], block_adjusted[1], block_adjusted[2]
             # block-id returns a string with quotes in it, so we have to remove it
-            block_id = region.getblock(x, y, z).blockid.replace("\"", "")
+            block_id = region[x, y, z].id.replace("\"", "")
             if filters is None or block_id in filters:
                 schematic_array[cor_x][cor_y][cor_z] = block_id
 
@@ -71,7 +71,7 @@ def generate_block_palette(schematic_path, y = None):
         # add block to palette if not present and y value matches
 
         # once again, .blockid returns a string with quotation marks, so I have to remove them
-        block_id = region.getblock(block_pos[0], block_pos[1], block_pos[2]).blockid.replace("\"", "")
+        block_id = region[block_pos[0], block_pos[1], block_pos[2]].id.replace("\"", "")
 
         if block_id not in block_palette and (block_pos[1] is y or y is None):
             block_palette.append(block_id)
@@ -85,8 +85,8 @@ def generate_block_palette_region(block_palette, y):
 
     # place block in the schematic next to appropriate data block
     for x in range(len(block_palette)):
-        palette_region.setblock(x, 0, 0, BlockState(block_palette[x]))
-        palette_region.setblock(x, 0, 1, BlockState(data_palette[x]))
+        palette_region[x, 0, 0] = BlockState(block_palette[x])
+        palette_region[x, 0, 1] = BlockState(data_palette[x])
 
     return palette_region
 
@@ -162,7 +162,7 @@ if __name__ == '__main__':
 
     placeholder_input = input("enter placeholder block id or skip to use default ('minecraft:beacon'): ")
 
-    if placeholder_input is not "":
+    if placeholder_input != "":
         placeholder_block = placeholder_input
 
     # break both schematics down into comparable units
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     all_blocks = rom_region.allblockpos()
     for block in all_blocks:
         new_block = convert_funky_coordinates(block, (rom_region.width, rom_region.height, rom_region.length))
-        generated_region.setblock(new_block[0], new_block[1], new_block[2], BlockState(rom_region.getblock(block[0], block[1], block[2]).blockid.replace("\"", "")))
+        generated_region[new_block[0], new_block[1], new_block[2]] = BlockState(rom_region[block[0], block[1], block[2]].id.replace("\"", ""))
 
     # accumulate all regions into regions dict
     regions = {}
@@ -225,7 +225,7 @@ if __name__ == '__main__':
         for x in range(len(dataPoints)):
             for z in range(len(dataPoints[0][0])):
                 rx, ry, rz = dataPoints[x][y][z]
-                generated_region.setblock(rx, ry, rz, BlockState(data_palette[block_palette.index(pattern[x][y][z])]))
+                generated_region[rx, ry, rz] = BlockState(data_palette[block_palette.index(pattern[x][y][z])])
 
     regions["rom"] = generated_region
 
