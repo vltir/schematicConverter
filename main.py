@@ -1,5 +1,7 @@
-from litemapy import Schematic, Region, BlockState
+from litemapy import Schematic, Region, BlockState, TileEntity
+from nbtlib import Compound, List, String, Int
 import os
+import math
 
 # all the different SS-boxes from id=1 to id=15
 data_palette = ["minecraft:white_shulker_box", "minecraft:orange_shulker_box", "minecraft:magenta_shulker_box", "minecraft:light_blue_shulker_box", "minecraft:yellow_shulker_box", "minecraft:lime_shulker_box", "minecraft:pink_shulker_box", "minecraft:gray_shulker_box", "minecraft:light_gray_shulker_box", "minecraft:cyan_shulker_box", "minecraft:purple_shulker_box", "minecraft:blue_shulker_box", "minecraft:brown_shulker_box", "minecraft:green_shulker_box", "minecraft:red_shulker_box"]
@@ -87,6 +89,7 @@ def generate_block_palette_region(block_palette, y):
     for x in range(len(block_palette)):
         palette_region[x, 0, 0] = BlockState(block_palette[x])
         palette_region[x, 0, 1] = BlockState(data_palette[x])
+        palette_region.tile_entities.append(create_shulker_tile_entity((x, 0, 1), x + 1))
 
     return palette_region
 
@@ -150,6 +153,28 @@ def input_path(path):
         return input_path(path)
 
     return path
+
+
+def create_shulker_tile_entity(position, signal_strength):
+    # creates a tileentity for a shulkerbox
+    return TileEntity(Compound({
+        "x": Int(position[0]),
+        "y": Int(position[1]),
+        "z": Int(position[2]),
+        "id": String("minecraft:shulker_box"),
+        "Items": List[Compound]([
+            Compound({
+                "Slot": Int(i),
+                "id": String("minecraft:potion"),
+                "Count": Int(1)
+            })
+            for i in range(calculate_items_for_signal_strength(signal_strength, 27))
+        ])
+    }))
+
+
+def calculate_items_for_signal_strength(desired_signal_strength, total_slots):
+    return max(desired_signal_strength, math.ceil(total_slots * (desired_signal_strength - 1)/14))
 
 
 # Press the green button in the gutter to run the script.
@@ -226,6 +251,7 @@ if __name__ == '__main__':
             for z in range(len(dataPoints[0][0])):
                 rx, ry, rz = dataPoints[x][y][z]
                 generated_region[rx, ry, rz] = BlockState(data_palette[block_palette.index(pattern[x][y][z])])
+                generated_region.tile_entities.append(create_shulker_tile_entity((rx, ry, rz), block_palette.index(pattern[x][y][z]) + 1))
 
     regions["rom"] = generated_region
 
